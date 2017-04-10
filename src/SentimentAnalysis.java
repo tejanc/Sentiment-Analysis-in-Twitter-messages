@@ -1,15 +1,11 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.File;
 import java.util.Random;
-
-import javax.management.Attribute;
-
-import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
-import weka.core.FastVector;
 import weka.core.Instances;
+import weka.core.converters.ArffLoader;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.StringToWordVector;
 
 public class SentimentAnalysis {
 
@@ -21,7 +17,7 @@ public class SentimentAnalysis {
 		
 		try {
 			runSentimentAnalysis();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -41,19 +37,21 @@ public class SentimentAnalysis {
 		
 	}
 
-	public static void runSentimentAnalysis() throws IOException {
-		
-		BufferedReader breader = null;
-		breader = new BufferedReader(new FileReader("semeval_twitter_data.arff"));
-		
+	public static void runSentimentAnalysis() throws Exception {
+		ArffLoader loader = new ArffLoader();
+	    loader.setFile(new File("src/semeval_twitter_data.arff"));
+	    Instances breader = loader.getDataSet();
+	    
 		Instances train = new Instances (breader);
 		train.setClassIndex(train.numAttributes() - 1);
-		
-		breader.close();
+				
+		StringToWordVector filter = new StringToWordVector();
+	    filter.setInputFormat(train);
+	    Instances dataFiltered = Filter.useFilter(train, filter);
 		
 		NaiveBayes nB = new NaiveBayes();
 		try {
-			nB.buildClassifier(train);
+			nB.buildClassifier(dataFiltered);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -66,7 +64,7 @@ public class SentimentAnalysis {
 			e.printStackTrace();
 		}
 		try {
-			eval.crossValidateModel(nB, train, 10, new Random(1));
+			eval.crossValidateModel(nB, dataFiltered, 10, new Random(1));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
