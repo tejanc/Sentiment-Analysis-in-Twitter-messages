@@ -1,5 +1,13 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.Random;
+import java.util.StringTokenizer;
+
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
@@ -9,11 +17,11 @@ import weka.filters.unsupervised.attribute.StringToWordVector;
 
 public class SentimentAnalysis {
 
-	private static final String FILE = "C:\\Users\\Tejan\\Dropbox\\workspace\\Sentiment Analysis in Twitter Messages\\src\\semeval_twitter_data.txt";
+	private static final String FILE = "src/semeval_twitter_data.txt";
 
 	public static void main (String[] args) {
 
-		//createARFF(FILE);
+		createARFF(FILE);
 		
 		try {
 			runSentimentAnalysis();
@@ -23,23 +31,39 @@ public class SentimentAnalysis {
 		}
 	}
 	
-	public static void createARFF(String file) {
+	public static void createARFF(String name) {
+		try {
+			File file = new File(name);
+			File fout = new File("out.txt");
+			FileOutputStream fos = new FileOutputStream(fout);
+			FileReader fileReader = new FileReader(file);
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+			String line;
+			
+			bw.write("@relation opinion\n@attribute sentence string\n@attribute category {positive,negative,neutral,objective}\n@data\n");
+			
+			while ((line = bufferedReader.readLine()) != null) {
+				bw.write(parseTweet(line));
+				bw.newLine();
+			}
+			fileReader.close();
+			bw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
-		tweetTokenizer();
 	}
 	
-	/*
-	 * Removes all html tags and attribute e.g. /<[^>]+>/
-	 * All URLs i.e. http or www are removed
-	 * The first character in Twitter usernames and hash tags e.g @ and # are removed.
-	 */
-	public static void tweetTokenizer() {
-		
+	public static String parseTweet(String content) {
+		String[] result = content.split("\\t");
+		return "' " + result[3].replace("'", "") + " '," + result[2].substring(1, result[2].length() - 1);
+  
 	}
 
 	public static void runSentimentAnalysis() throws Exception {
 		ArffLoader loader = new ArffLoader();
-	    loader.setFile(new File("src/semeval_twitter_data.arff"));
+	    loader.setFile(new File("out.txt"));
 	    Instances breader = loader.getDataSet();
 	    
 		Instances train = new Instances (breader);
